@@ -13,7 +13,7 @@ async def get_usd_max_rate() -> str:
         async with session.get(url) as response:
             html = await response.text()
             soup = BeautifulSoup(html, 'html.parser')
-            data = []  # Используем этот список для сбора данных
+            data = [] 
 
             rows = soup.find_all('tr')
             for row in rows:
@@ -24,7 +24,6 @@ async def get_usd_max_rate() -> str:
                         usd_values = row.find_all('td', class_='column-USD')
                         cump_usd = usd_values[0].text.strip().replace(",", ".")
                         vanz_usd = usd_values[1].text.strip().replace(",", ".")
-                        # Преобразуем в float
                         cump_usd_float = float(cump_usd)
                         vanz_usd_float = float(vanz_usd)
                         data.append({
@@ -34,10 +33,8 @@ async def get_usd_max_rate() -> str:
                             "cump_usd_float": cump_usd_float
                         })
 
-            # Сортируем по cump_usd_float от максимального к минимальному
             sorted_data = sorted(data, key=lambda x: x['cump_usd_float'], reverse=True)
 
-            # Формируем результат
             result = [f"<b>{item['bank_name']:35}</b>{item['cump_usd']:>5} / {item['vanz_usd']:5}" for item in sorted_data]
             
             return '\n'.join(result)

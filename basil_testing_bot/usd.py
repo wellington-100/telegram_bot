@@ -15,20 +15,16 @@ async def get_rate() -> str:
             soup = BeautifulSoup(html, 'html.parser')
             result = []
 
-            # Добавляем заголовок
             result.append("<code>Banca/CSV___USD___cump.___vanz.</code>")
-            
-            # находим все строки в таблице
             rows = soup.find_all('tr')
             for row in rows:
                 bank_data = row.find('td', class_='bank_name')
                 if bank_data:
                     bank_name = bank_data.a.text.strip()
-                    if "Banca Nationala" not in bank_name:  # Исключаем Banca Nationala
+                    if "Banca Nationala" not in bank_name:
                         usd_values = row.find_all('td', class_='column-USD')
                         cump_usd = usd_values[0].text.strip()
                         vanz_usd = usd_values[1].text.strip()
-                        # Заменяем запятые на точки и отображаем только два знака после запятой
                         cump_usd = f'{float(cump_usd.replace(",", ".")):.2f}'
                         vanz_usd = f'{float(vanz_usd.replace(",", ".")):.2f}'
                         result.append(f"<code>{bank_name:15} {cump_usd:10} {vanz_usd:10}</code>")

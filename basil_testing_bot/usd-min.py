@@ -24,20 +24,16 @@ async def get_usd_min_rate() -> str:
                         usd_values = row.find_all('td', class_='column-USD')
                         cump_usd = usd_values[0].text.strip().replace(",", ".")
                         vanz_usd = usd_values[1].text.strip().replace(",", ".")
-                        # Преобразуем в float
                         cump_usd_float = float(cump_usd)
                         vanz_usd_float = float(vanz_usd)
                         data.append({
                             "bank_name": bank_name,
                             "cump_usd": f'{cump_usd_float:.2f}',
                             "vanz_usd": f'{vanz_usd_float:.2f}',
-                            "vanz_usd_float": vanz_usd_float  # Добавляем vanz_usd_float для сортировки
+                            "vanz_usd_float": vanz_usd_float  
                         })
-
-            # Сортируем по vanz_usd_float от минимального к максимальному
             sorted_data = sorted(data, key=lambda x: x['vanz_usd_float'])
 
-            # Формируем результат
             result = [f"<b>{item['bank_name']:35}</b>{item['cump_usd']:>5} / {item['vanz_usd']:5}" for item in sorted_data]
             
             return '\n'.join(result)

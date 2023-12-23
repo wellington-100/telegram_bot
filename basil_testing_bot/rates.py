@@ -59,5 +59,3 @@ async def custom_rate(update: Update, context: CallbackContext, currency: str, s
     rate_message = await get_rate(currency, sort_key, reverse)
     await update.message.reply_text(rate_message, parse_mode="HTML")
 
-
-# Вставьте сюда код для работы бота с Telegram.

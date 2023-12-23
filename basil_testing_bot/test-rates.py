@@ -24,18 +24,16 @@ async def get_rate(currency: str, sort_key: str, reverse: bool = False) -> str:
                 bank_data = row.find('td', class_='bank_name')
                 if bank_data:
                     bank_name = bank_data.a.text.strip()
-                    # Ignorați cuvintele nedorite din numele băncii
                     for word in ignore_words:
-                        bank_name = bank_name.replace(word, "")  # Înlocuiți cuvântul cu un șir gol
-                    bank_name = bank_name.strip()  # Eliminați spațiile suplimentare care ar putea apărea după eliminarea cuvintelor
+                        bank_name = bank_name.replace(word, "") 
+                    bank_name = bank_name.strip()  
                     if "Banca Nationala" not in bank_name:
                         values = row.find_all('td', class_=column_class)
                         cump = values[0].text.strip().replace(",", ".")
                         vanz = values[1].text.strip().replace(",", ".")
-                        
-                        # Добавьте эти строки перед конвертацией в float
+
                         if not (re.match(r'^-?\d+(?:\.\d+)?$', cump) and re.match(r'^-?\d+(?:\.\d+)?$', vanz)):
-                            continue  # Если cump или vanz не являются числами, пропустите текущую итерацию цикла
+                            continue 
                         
                         cump_float = float(cump)
                         vanz_float = float(vanz)
