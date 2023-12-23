@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 from fetch_data import *
 from rates import *
 from datetime import datetime
+from config import TELEGRAM_TOKEN
 
 
 async def start(update: Update, context: CallbackContext) -> None:
@@ -89,7 +90,7 @@ async def deghest (update: Update, context: CallbackContext) -> None:
 
 
 def main() -> None:
-    application = Application.builder().token("6352522804:AAH1ucmVNQOWpPHP1Qce6FTexOCrOOKNQ1M").build()
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("clio", clio))
