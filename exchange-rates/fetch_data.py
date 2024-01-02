@@ -3,7 +3,10 @@ from aiohttp import ClientSession
 from bs4 import BeautifulSoup        
 from telegram import Update, ForceReply  
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext 
-from urls import *                   
+from urls import * 
+from currency_flags import currency_flags  
+
+
 async def fetch_data_handler(update: Update, context: CallbackContext, endpoint: str):
     url = BASE_URLS.get(endpoint)  
     if url:
@@ -54,20 +57,34 @@ def extract_currency_rates(rows):
 
 def format_currency_rates(rates):
     response_message = f"\n\n<b><code>{'Valuta':<10}{'Cumparare':<10}{'Vanzare':>10}</code></b>\n\n"
-    response_message += "\n".join([f"<b><code>{key:<10} {float(value[1]):^10.2f} {float(value[2]):^10.2f}</code></b>" for key, value in rates.items()])
+    for key, value in rates.items():
+        flag = currency_flags.get(key, "")  # Получение флага для валюты
+        response_message += f"{flag}<code> {key:<8} {float(value[1]):^10.2f} {float(value[2]):^10.2f}</code>\n"
     return response_message
 
 def extract_bank_info(soup):
     response_message = ""
     
     bank_info_div = soup.find('div', class_='bank_info')
-    exchange_name = soup.find('h1').get_text().strip()
+    if not bank_info_div:
+        return "Bank info not found."
 
-    address = bank_info_div.find('h2', string='Adresa').find_next('address').get_text(strip=True)
-    map_link = bank_info_div.find('a', class_='btn btn-suggest')['href']
+    h1_tag = soup.find('h1')
+    exchange_name = h1_tag.get_text().strip() if h1_tag else "Name not found"
 
-    contact_details_dl = bank_info_div.find('h2', string='Date de contact').find_next('dl', class_='dl-horizontal dl-workhours')
-    contact_details = {dt.get_text(strip=True).replace(':', ''): dd.get_text(strip=True) for dt, dd in zip(contact_details_dl.find_all('dt'), contact_details_dl.find_all('dd'))}
+    address = bank_info_div.find('h2', string='Adresa')
+    address = address.find_next('address').get_text(strip=True) if address else "Address not found"
+
+    map_link = bank_info_div.find('a', class_='btn btn-suggest')
+    map_link = map_link['href'] if map_link else "Map link not found"
+
+    contact_details_dl = bank_info_div.find('h2', string='Date de contact')
+    if contact_details_dl:
+        contact_details_dl = contact_details_dl.find_next('dl', class_='dl-horizontal dl-workhours')
+        contact_details = {dt.get_text(strip=True).replace(':', ''): dd.get_text(strip=True) 
+                           for dt, dd in zip(contact_details_dl.find_all('dt'), contact_details_dl.find_all('dd'))}
+    else:
+        contact_details = "Contact details not found"
 
     working_hours_div = bank_info_div.find('h2', string='Orarul de lucru')
     if working_hours_div:
@@ -114,7 +131,7 @@ async def command_handler(update: Update, context: CallbackContext):
     if command in BASE_URLS:
         await fetch_data_handler(update, context, command)
     else:
-        await context.bot.send_message(chat_id=update.message.chat_id, text=f"Unsupported command: {command}")
+        await context.bot.send_message(chat_id=update.message.chat_id, text=f"Comandă inexistentă: {command}")
 
 
 
