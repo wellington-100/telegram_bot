@@ -1,18 +1,50 @@
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
-from telegram import Update, ForceReply
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler, ContextTypes
 from fetch_data import *
 from rates import *
 from datetime import datetime
 from config import TELEGRAM_TOKEN
 
 
-async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Привет! Я ваш простой бот.')
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        [InlineKeyboardButton("Опция 1", callback_data='1'),
+         InlineKeyboardButton("Опция 2", callback_data='2')],
+        [InlineKeyboardButton("Опция 3", callback_data='3')]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Пожалуйста, выберите опцию:', reply_markup=reply_markup)
+
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(text=f"Выбрана опция: {query.data}")
+####################################################################################
+async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        ['Bănci', 'Schimburi Valutare'],
+        ['Valute', 'Alerte']
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True, resize_keyboard=True)
+
+    await update.message.reply_text('Привет! Выберите опцию:', reply_markup=reply_markup)
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    text = update.message.text
+    await update.message.reply_text(f'Вы выбрали: {text}')
+
+
+
+
+
+
 
 async def echo(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(update.message.text)
+
 
 
 #######################################################################################
@@ -27,8 +59,31 @@ async def universal_min_rate(update: Update, context: CallbackContext) -> None:
 
 
 ############################################### CLIO    ##########################################
-async def clio (update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Alegeți Filiala:\n/cliocsv(Central),\n/clio1(Filiala 1),\n/clio2(Filiala 2),\n/clio3(Filiala 3),\n/clio4(Filiala 4)')
+# async def clio (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/cliocsv(Central),\n/clio1(Filiala 1),\n/clio2(Filiala 2),\n/clio3(Filiala 3),\n/clio4(Filiala 4)')
+
+async def clio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    keyboard = [
+        [InlineKeyboardButton("Clio Filiala 1", callback_data='/clio1 (Accesați comanda...)'),
+         InlineKeyboardButton("Clio Filiala 2", callback_data='/clio2')],
+        [InlineKeyboardButton("Clio Filiala 3", callback_data='/clio3'),
+         InlineKeyboardButton("Clio Filiala 4", callback_data='/clio4')],
+        [InlineKeyboardButton("Clio Centrala", callback_data='/cliocsv')]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text('Alegeți Cetrala sau una din filiale:', reply_markup=reply_markup)
+
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    command = query.data
+
+    # Отправляем команду как текстовое сообщение
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=command)
+
+
            
 ############################################### DEGHEST    ##########################################
 async def deghest (update: Update, context: CallbackContext) -> None:
@@ -49,7 +104,15 @@ def main() -> None:
 
     # Обычные обработчики команд
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button))
+
+    application.add_handler(CommandHandler("menu", menu))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
     application.add_handler(CommandHandler("clio", clio))
+    application.add_handler(CallbackQueryHandler(button))
+
+    # application.add_handler(CommandHandler("clio", clio))
     application.add_handler(CommandHandler("deghest", deghest))
     application.add_handler(CommandHandler("bnm", bnm_rate))
     application.add_handler(CommandHandler("armetis", armetis))

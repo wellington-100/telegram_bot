@@ -13,85 +13,84 @@ from urls import urls
 
 
 
-async def get_basic_rates(currency_code: str) -> dict:
+async def get_basic_rates(currency: str) -> str:
     url = "https://www.curs.md/ro/curs_valutar_banci"
-    all_data = {}
-    formatted_date = None
-
+    
     async with ClientSession() as session:
         async with session.get(url) as response:
+            if response.status != 200:
+                return "Ошибка загрузки страницы"
             html = await response.text()
-            soup = BeautifulSoup(html, 'html.parser')
 
-            # Извлечение и форматирование даты
-            date_elem = soup.find('input', {'id': 'BanksCotDate'})
-            if date_elem:
-                date_value = date_elem.get('value')
-                try:
-                    date_obj = datetime.strptime(date_value, "%Y-%m-%d")
-                    formatted_date = date_obj.strftime("%d.%m.%Y")
-                except ValueError:
-                    return "Ошибка формата даты"
-            print(f"Дата: {formatted_date}")
+    soup = BeautifulSoup(html, 'html.parser')
 
-            table = soup.find('table', {'id': 'tabelBankValute'})
-            if not table:
-                return "Ошибка: таблица курсов не найдена"
+    # Получение даты
+    date_value = soup.find('input', {'id': 'BanksCotDate'})['value']
+    date_obj = datetime.strptime(date_value, "%Y-%m-%d")
+    formatted_date = date_obj.strftime("%d.%m.%Y")
 
-            # Считываем заголовки столбцов для определения порядка валют
-            headers = table.find('tr').find_all('td')[1:]  # Пропускаем первый столбец с названием банка
-            currency_order = [header.get('class')[0].split('-')[1] for header in headers if 'column-auto' not in header.get('class')[0]]
+    # Находим таблицу с данными
+    table = soup.find('table', id='tabelBankValute')
+    rows = table.find_all('tr')[1:]  # Исключение заголовка таблицы
 
-            print(f"Порядок валют: {currency_order}")
+    results = []
+    exclusions = ["SRL", "CSV", "Tighina", "Filiala Kiev", "BNM", "Bancă", "\""]
+    replacements = {
+        "Filiala 1": "1",
+        "Filiala 2": "2",
+        "Filiala 3": "3",
+        "Filiala 4": "4",
+        "Filiala 7": "7",
+        "Filiala 9": "9",
+        "Sucursala 1": "1",
+        "Sucursala 2": "2",
+        "Sucursala 3": "3",
+        "Sucursala 4": "4",
+        "Sucursala 5": "5",
+        # Добавьте другие замены по необходимости
+    }    
+    for row in rows:
+        bank_name_cell = row.find('td', class_='bank_name')
+        if bank_name_cell is None:
+            continue  # Пропустить эту строку, если элемент не найден
+        bank_name = row.find('td', class_='bank_name').get_text(strip=True)
+        # Применение замен
+        for old, new in replacements.items():
+            bank_name = bank_name.replace(old, new)
 
-            for row in table.find_all('tr')[1:]:
-                cells = row.find_all('td')
-                if not cells or len(cells) < 2:
-                    print("Строка без данных или с недостаточным количеством ячеек")
-                    continue
-                bank_name = cells[0].get_text(strip=True)
-                print(f"Обрабатываем банк: {bank_name}")
+        # Удаление исключений
+        for exclusion in exclusions:
+            bank_name = bank_name.replace(exclusion, "")
 
-                currency_data = []
-                for cell in cells[1:]:
-                    if 'column-auto' not in cell.get('class', []):
-                        currency_data.append(cell.get_text(strip=True))
+        bank_name = re.sub(r'\(.*?\)', '', bank_name).strip()
+        if "Banca Nationala" in bank_name:
+            continue
 
-                # Убедимся, что количество элементов в currency_data соответствует ожидаемому
-                if len(currency_data) != len(currency_order) * 2:
-                    print(f"Недостаточное количество данных для валют в банке {bank_name}")
-                    continue
+        cols = row.find_all('td', class_=f'column-{currency}')
 
-                for i in range(0, len(currency_order) * 2, 2):
-                    currency_code = currency_order[i // 2]
-                    cump_rate = currency_data[i].replace(",", ".")
-                    vanz_rate = currency_data[i + 1].replace(",", ".")
+        if cols:
+            cump = cols[0].text.strip().replace(",", ".")
+            vanz = cols[1].text.strip().replace(",", ".")
 
-                    if cump_rate and vanz_rate and cump_rate != '-' and vanz_rate != '-':
-                        cump_float = float(cump_rate)
-                        vanz_float = float(vanz_rate)
-                        if currency_code not in all_data:
-                            all_data[currency_code] = []
-                        all_data[currency_code].append({
-                            "exchanger_name": bank_name,
-                            "cump": f'{cump_float:.2f}',
-                            "vanz": f'{vanz_float:.2f}',
-                            "cump_float": cump_float,
-                            "vanz_float": vanz_float
-                        })
-                print(f"Обработанные данные для {bank_name}: {all_data.get(currency_code, 'Нет данных')}")
+            # Преобразование в float и форматирование
+            try:
+                cump_float = float(cump)
+                vanz_float = float(vanz)
+                results.append(f"<pre><b>{bank_name:20}</b> {cump_float:.2f}  {vanz_float:.2f}</pre>")
+            except ValueError:
+                continue
 
-    if currency_code in all_data:
-        data = all_data[currency_code]
-        results = [f"{item['exchanger_name']}: {item['cump']} / {item['vanz']}" for item in data]
-        header = f"<b>RATE DE SCHIMB VALUTAR: {formatted_date or 'Lipsă dată'}\n{currency_code}</b>\n"
-        return header + '\n'.join(results)
-    else:
-        return f"Нет данных по валюте {currency_code}."
+    if not results:
+        return f"Нет данных по валюте {currency}."
+
+   
+    selected_currency_flag = currency_flags.get(currency, "")
+    header = f"<b>RATE DE SCHIMB VALUTAR: {formatted_date or 'Lipsă dată'}\n{selected_currency_flag} {currency} / MDL {currency_flags['MDL']}</b>\n\n"
+    return header + '\n'.join(results)
 
 async def custom_basic_rates(update: Update, context: CallbackContext) -> None:
-    currency_code = update.message.text[1:].upper()
-    rates_message = await get_basic_rates(currency_code)
+    currency = update.message.text[1:].upper()
+    rates_message = await get_basic_rates(currency)
     await update.message.reply_text(rates_message, parse_mode="HTML")
 
 
@@ -100,6 +99,81 @@ async def custom_basic_rates(update: Update, context: CallbackContext) -> None:
 
 
 
+# async def get_basic_rates(currency_code: str) -> dict:
+#     url = "https://www.curs.md/ro/curs_valutar_banci"
+#     all_data = {}
+#     formatted_date = None
+
+#     async with ClientSession() as session:
+#         async with session.get(url) as response:
+#             html = await response.text()
+#             soup = BeautifulSoup(html, 'html.parser')
+
+#             # Извлечение и форматирование даты
+#             date_elem = soup.find('input', {'id': 'BanksCotDate'})
+#             if date_elem:
+#                 date_value = date_elem.get('value')
+#                 try:
+#                     date_obj = datetime.strptime(date_value, "%Y-%m-%d")
+#                     formatted_date = date_obj.strftime("%d.%m.%Y")
+#                 except ValueError:
+#                     return "Ошибка формата даты"
+#             print(f"Дата: {formatted_date}")
+
+#             table = soup.find('table', {'id': 'tabelBankValute'})
+#             if not table:
+#                 return "Ошибка: таблица курсов не найдена"
+
+#             # Считываем заголовки столбцов для определения порядка валют
+#             headers = table.find('tr').find_all('td')[1:]  # Пропускаем первый столбец с названием банка
+#             currency_order = [header.get('class')[0].split('-')[1] for header in headers if 'column-auto' not in header.get('class')[0]]
+
+#             print(f"Порядок валют: {currency_order}")
+
+#             for row in table.find_all('tr')[1:]:
+#                 cells = row.find_all('td')
+#                 if not cells or len(cells) < 2:
+#                     print("Строка без данных или с недостаточным количеством ячеек")
+#                     continue
+#                 bank_name = cells[0].get_text(strip=True)
+#                 print(f"Обрабатываем банк: {bank_name}")
+
+#                 currency_data = []
+#                 for cell in cells[1:]:
+#                     if 'column-auto' not in cell.get('class', []):
+#                         currency_data.append(cell.get_text(strip=True))
+
+#                 # Убедимся, что количество элементов в currency_data соответствует ожидаемому
+#                 if len(currency_data) != len(currency_order) * 2:
+#                     print(f"Недостаточное количество данных для валют в банке {bank_name}")
+#                     continue
+
+#                 for i in range(0, len(currency_order) * 2, 2):
+#                     currency_code = currency_order[i // 2]
+#                     cump_rate = currency_data[i].replace(",", ".")
+#                     vanz_rate = currency_data[i + 1].replace(",", ".")
+
+#                     if cump_rate and vanz_rate and cump_rate != '-' and vanz_rate != '-':
+#                         cump_float = float(cump_rate)
+#                         vanz_float = float(vanz_rate)
+#                         if currency_code not in all_data:
+#                             all_data[currency_code] = []
+#                         all_data[currency_code].append({
+#                             "exchanger_name": bank_name,
+#                             "cump": f'{cump_float:.2f}',
+#                             "vanz": f'{vanz_float:.2f}',
+#                             "cump_float": cump_float,
+#                             "vanz_float": vanz_float
+#                         })
+#                 print(f"Обработанные данные для {bank_name}: {all_data.get(currency_code, 'Нет данных')}")
+
+#     if currency_code in all_data:
+#         data = all_data[currency_code]
+#         results = [f"{item['exchanger_name']}: {item['cump']} / {item['vanz']}" for item in data]
+#         header = f"<b>RATE DE SCHIMB VALUTAR: {formatted_date or 'Lipsă dată'}\n{currency_code}</b>\n"
+#         return header + '\n'.join(results)
+#     else:
+#         return f"Нет данных по валюте {currency_code}."
 
 
 
