@@ -2,15 +2,36 @@ BASE = "https://www.curs.md/ro/office/"
 
 PATHS = {
     "bcr":        "bcr",
-    "comertbank": "comertbank",
-    "energbank":  "energbank",
-    "ecb":  "eurocreditbank",
-    "eximbank":  "eximbank",
-    "fincombank":  "fincombank",
+    "comert": "comertbank",
+    "energ":  "energbank",
+    "ecb":  "ecb",
+    "exim":  "eximbank",
+    "fincom":  "fincombank",
     "maib":  "maib",
     "micb":  "micb",
     "otp":  "mobiasbanca",
-    "victoriabank":  "victoriabank",
+    "victoria":  "victoriabank",
+
+    "ebanknotes1":    "everest",
+    "ebanknotes2":    "oantaf2",
+    "ebanknotes3":    "oantaf3",
+    "adalan":         "adalan",
+    "armetisgrup":    "armetis",
+    "armetis1":  "armetisf1",
+    "armetis2":  "armetisf2",
+    "armetis3":  "armetisf3",
+    "armetis4":  "armetisf4",
+    "armetis5":  "armetisf5",
+    "arminius": "arminius",
+
+    "avadaciocana":  "avada",
+    "avadacentru":  "avadaf9",
+    "avadagara":  "avadaf7",
+    "ciocana":  "ciocana",
+
+
+    
+    
 
     "cliocsv":    "clio",
     "clio1":      "cliof1",
@@ -21,18 +42,11 @@ PATHS = {
     "deghest1":   "deghf1",
     "deghest2":   "deghf2",
     "francunic":  "francunic",
-    "everest":    "everest",
-    "armetisgrup":    "armetis",
-    "armetis1":  "armetisf1",
-    "armetis2":  "armetisf2",
-    "armetis3":  "armetisf3",
-    "armetis4":  "armetisf4",
-    "armetis5":  "armetisf5",
 
 
     "arminius":  "arminius",
-    "avada":  "avada",
     "calisto":  "calistong",
+    "oanta": "oanta"
 
 }
 

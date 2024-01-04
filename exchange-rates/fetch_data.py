@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from telegram import Update, ForceReply  
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext 
 from urls import * 
-from currency_flags import currency_flags  
+from currency_info import currency_flags, currency_codes 
 
 
 async def fetch_data_handler(update: Update, context: CallbackContext, endpoint: str):
@@ -36,18 +36,18 @@ def extract_rate_info(soup):
         response_message += f"<b>Ratele de schimb: {time_intervals_text[0]}</b>"
 
     rows = soup.find_all('tr')
-    rates = extract_currency_rates(rows)
+    rates = extract_currency_rates(rows, currency_codes)
     
     if rates:
         response_message += format_currency_rates(rates)
     
     return response_message
 
-def extract_currency_rates(rows):
+def extract_currency_rates(rows, currency_codes):
     rates = {}
     for row in rows[1:]:
         cells = row.find_all('td')
-        if cells and len(cells) >= 5 and cells[0].get_text() in ["USD", "EUR", "RUB", "RON", "UAH", "CAD", "ILS", "CHF", "GBP", "TRY", "AED", "AUD", "BYN", "CNY", "CZK", "HUF", "JPY", "SEK", "PLN", "DKK", "HRK", "NOK", ]:
+        if cells and len(cells) >= 5 and cells[0].get_text() in currency_codes:
             currency = cells[0].get_text()
             currency_name = cells[1].get_text()
             buy_rate = cells[3].get_text().replace(",", ".").strip()
