@@ -1,16 +1,40 @@
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext, CallbackQueryHandler, ContextTypes
 from fetch_data import *
 from rates import *
 from datetime import datetime
 from config import TELEGRAM_TOKEN
 from currency_info import *
+from user import *
+
+
+def user_exists(user_id):
+    """ Проверка, существует ли пользователь в базе данных """
+    conn = connect()
+    cur = conn.cursor()
+    cur.execute("SELECT EXISTS(SELECT 1 FROM users WHERE user_id = %s);", (user_id,))
+    exists = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return exists
+
+def add_user_if_not_exists(user_id, username=None):
+    """ Добавление пользователя, если он не существует """
+    if not user_exists(user_id):
+        add_user(user_id, username)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     print("Функция start вызвана")  # Логирование вызова функции start
+
+    user_id = update.effective_user.id
+    username = update.effective_user.username
+
+    # Добавить пользователя в базу данных, если его там нет
+    add_user_if_not_exists(user_id, username)
+
     keyboard = [
         ['Bănci', 'Case de schimb valutar'],
         ['Valute', 'Alerte']
@@ -35,16 +59,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     else:
         await update.message.reply_text(f'Ați ales: {text}')
 
-#--------------------------------------------- CLIO    ---------------------------------------------
-async def clio (update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Alegeți Filiala:\n/cliocsv(Central),\n/clio1(Filiala 1),\n/clio2(Filiala 2),\n/clio3(Filiala 3),\n/clio4(Filiala 4)')  
-#--------------------------------------------- DEGHEST    -------------------------------------------
-async def deghest (update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Alegeți Filiala:\n/deghestcsv(Central),\n/deghest1(Filiala 1),\n/deghest2(Filiala 2)')
-#--------------------------------------------- ARMETIS    ------------------------------------------
-async def armetis (update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Alegeți Filiala:\n/armetisgrup(Central),\n/armetis1(Sucursala 1),\n/armetis2(Sucursala 2),\n/armetis3(Sucursala 3),\n/armetis4(Sucursala 4),\n/armetis5(Sucursala 5)')      
-#---------------------------------------------------------------------------------------------------
+
 
 def main() -> None:
     application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -55,10 +70,6 @@ def main() -> None:
     application.add_handler(message_handler)
     
 
-    application.add_handler(CommandHandler("clio", clio))
-    application.add_handler(CommandHandler("deghest", deghest))
-    application.add_handler(CommandHandler("bnm", bnm_rate))
-    application.add_handler(CommandHandler("armetis", armetis))
 
     for currency_code in currency_codes:
         application.add_handler(CommandHandler(f"{currency_code}", custom_rates))
@@ -84,7 +95,7 @@ if __name__ == '__main__':
 
 
 
-# async def clio(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+# async def alerte(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 #     keyboard = [
 #         [InlineKeyboardButton("Clio Filiala 1", callback_data='/clio1 (Accesați comanda...)'),
 #          InlineKeyboardButton("Clio Filiala 2", callback_data='/clio2')],
@@ -120,3 +131,28 @@ if __name__ == '__main__':
 #     query = update.callback_query
 #     await query.answer()
 #     await query.edit_message_text(text=f"Выбрана опция: {query.data}")
+
+
+# #--------------------------------------------- CLIO    ---------------------------------------------
+# async def clio (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/cliocsv (Central),\n/clio1 (Filiala 1),\n/clio2 (Filiala 2),\n/clio3 (Filiala 3),\n/clio4(Filiala 4)')  
+# #--------------------------------------------- DEGHEST    -------------------------------------------
+# async def deghest (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/deghestcsv (Central),\n/deghest1 (Filiala 1),\n/deghest2 (Filiala 2)')
+# #--------------------------------------------- ARMETIS    ------------------------------------------
+# async def armetis (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/armetisgrup (Central),\n/armetis1 (Sucursala 1),\n/armetis2 (Sucursala 2),\n/armetis3(Sucursala 3),\n/armetis4(Sucursala 4),\n/armetis5(Sucursala 5)') 
+# #--------------------------------------------- EXCLUSIV   ------------------------------------------
+# async def exclusiv (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/exclusivcsv (Central),\n/exclusiv1 (Filiala 1),\n/exclusiv2 (Filiala 2)')      
+# #--------------------------------------------- NELCAT  ------------------------------------------
+# async def nelcat (update: Update, context: CallbackContext) -> None:
+#     await update.message.reply_text('Alegeți Filiala:\n/nelcat1 (NELCAT CAPITAL),\n/nelcat2 (Filiala Kiev)')    
+#   
+    # application.add_handler(CommandHandler("clio", clio))
+    # application.add_handler(CommandHandler("deghest", deghest))
+    # application.add_handler(CommandHandler("bnm", bnm_rate))
+    # application.add_handler(CommandHandler("armetis", armetis))
+    # application.add_handler(CommandHandler("exclusiv", exclusiv))
+    # application.add_handler(CommandHandler("nelcat", nelcat))
+# #---------------------------------------------------------------------------------------------------

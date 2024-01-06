@@ -1,7 +1,7 @@
 BASE = "https://www.curs.md/ro/office/"
 
 PATHS = {
-    "bcr":        "bcr",
+    "bcr":  "bcr",
     "comert": "comertbank",
     "energ":  "energbank",
     "ecb":  "ecb",
@@ -15,8 +15,10 @@ PATHS = {
     "ebanknotes1":    "everest",
     "ebanknotes2":    "oantaf2",
     "ebanknotes3":    "oantaf3",
+
     "adalan":         "adalan",
-    "armetisgrup":    "armetis",
+
+    "armetis":    "armetis",
     "armetis1":  "armetisf1",
     "armetis2":  "armetisf2",
     "armetis3":  "armetisf3",
@@ -29,20 +31,24 @@ PATHS = {
     "avadagara":  "avadaf7",
     "ciocana":  "ciocana",
 
-
-    
-    
-
-    "cliocsv":    "clio",
+    "clio":    "clio",
     "clio1":      "cliof1",
     "clio2":      "cliof2",
     "clio3":      "clioschimb",
     "clio4":      "cliof4",
-    "deghestcsv": "degh",
+
+    "deghest": "degh",
     "deghest1":   "deghf1",
     "deghest2":   "deghf2",
-    "francunic":  "francunic",
 
+    "exclusiv": "exclusivschimb",
+    "exclusiv1": "exclusivschimbf1",
+    "exclusiv2": "exclusivschimbf2",
+
+    "nelcat1": "nelcat",
+    "nelcat2": "nelcatf1",
+    
+    "francunic":  "francunic",
 
     "arminius":  "arminius",
     "calisto":  "calistong",
