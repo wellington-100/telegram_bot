@@ -44,7 +44,8 @@ currency_flags = {
     "TRY": "\U0001F1F9\U0001F1F7",  # Флаг Турции
     "UZS": "\U0001F1FA\U0001F1FF",  # Флаг Узбекистана
     "EGP": "\U0001F1EA\U0001F1EC",  # Флаг Египта
-    "THB": "\U0001F1F9\U0001F1ED", # Флаг Тайланда
+    "THB": "\U0001F1F9\U0001F1ED",  # Флаг Тайланда
+    "SGD": "\U0001F1F8\U0001F1EC",  # Флаг Сингапура
     "XDR": "\U0001F310"  # Специальные права заимствования (SDR)
 }
 
@@ -92,55 +93,59 @@ currency_codes = [
     "TRY", #  Турции
     "UZS", #  Узбекистана
     "EGP", # Египта
-    "THB", # Тайлайнда 
+    "THB", # Тайлайнда
+    "SGD", # Сингапура
     "XDR"# Специальные права заимствования (SDR)
 ]
 
 currency_commands = [
-    "/usd Dolar S.U.A",
-    "/eur Euro",
-    "/rub Rublă rusească",
-    "/ron Leu românesc",
-    "/uah Hrivnă ucraineană",
-    "/gbp Liră sterlină",
-    "/chf Franc elvețian",
-    "/try Liră turcească",
-    "/cad Dolar canadian",
-    "/pln Zlot polenez",
-    "/czk Coroană cehă",
-    "/ils Shekel israelian",
-    "/byn Rublă bielorusă",
-    "/bgn Levă bulgară",
-    "/dkk Coroană daneză",
-    "/nok Coroană norvegiană",
-    "/sek Coroană suedeză",
-    "/isk Coroană islandeză",
-    "/huf Forint ungar",
-    "/aed Dirham E.A.U.",
-    "/aud Dolar australian",
-    "/hkd Dolar Hong Kong",
-    "/hrk Kună croată",
-    "/nzd Dolar neozelandez",
-    "/all Lek albanez",
-    "/amd Dram armenesc",
-    "/azn Manat azer",
-    "/jpy Yen Japonez",
-    "/cny Yuan chinezesc",
-    "/egp Liră egipteană",
-    "/gel Lari georgian",
-    "/inr Rupie indiană",
-    "/kgs Som kirghiz",
-    "/krw Won sud-coreean",
-    "/kwd Dolar kuweitean",
-    "/kzt Tenghe kazah",
-    "/mkd Dinar macedioan",
-    "/myr Ringgit malayezian",
-    "/rsd Dinar sârb",
-    "/thb Bath tailandez",
-    "/tjs Somoni tadjic",
-    "/tmt Manat turkmen",
-    "/uzs Sum uzbec",
+    f"/usd {currency_flags['USD']} Dolar S.U.A",
+    f"/eur  {currency_flags['EUR']} Euro",
+    f"/rub  {currency_flags['RUB']} Rublă rusească",
+    f"/ron  {currency_flags['RON']} Leu românesc",
+    f"/uah {currency_flags['UAH']} Hrivnă ucraineană",
+    f"/gbp {currency_flags['GBP']} Liră sterlină",
+    f"/chf  {currency_flags['CHF']} Franc elvețian",
+    f"/try   {currency_flags['TRY']} Liră turcească",
+    f"/cad {currency_flags['CAD']} Dolar canadian",
+    f"/pln  {currency_flags['PLN']} Zlot polonez",
+    f"/czk {currency_flags['CZK']} Coroană cehă",
+    f"/ils   {currency_flags['ILS']} Shekel israelian",
+    f"/byn {currency_flags['BYN']} Rublă bielorusă",
+    f"/bgn {currency_flags['BGN']} Levă bulgară",
+    f"/dkk {currency_flags['DKK']} Coroană daneză",
+    f"/nok {currency_flags['NOK']} Coroană norvegiană",
+    f"/sek {currency_flags['SEK']} Coroană suedeză",
+    f"/isk  {currency_flags['ISK']} Coroană islandeză",
+    f"/huf  {currency_flags['HUF']} Forint ungar",
+    f"/aed {currency_flags['AED']} Dirham E.A.U.",
+    f"/aud {currency_flags['AUD']} Dolar australian",
+    f"/hkd {currency_flags['HKD']} Dolar Hong Kong",
+    f"/hrk  {currency_flags['HRK']} Kună croată",
+    f"/nzd {currency_flags['NZD']} Dolar neozelandez",
+    f"/sgd {currency_flags['SGD']} Dolar Singapore",
+    f"/all   {currency_flags['ALL']} Lek albanez",
+    f"/amd {currency_flags['AMD']} Dram armenesc",
+    f"/azn {currency_flags['AZN']} Manat azer",
+    f"/jpy  {currency_flags['JPY']} Yen Japonez",
+    f"/cny {currency_flags['CNY']} Yuan chinezesc",
+    f"/egp {currency_flags['EGP']} Liră egipteană",
+    f"/gel  {currency_flags['GEL']} Lari georgian",
+    f"/inr   {currency_flags['INR']} Rupie indiană",
+    f"/kgs {currency_flags['KGS']} Som kirghiz",
+    f"/krw {currency_flags['KRW']} Won sud-coreean",
+    f"/kwd {currency_flags['KWD']} Dinar kuweit",
+    f"/kzt   {currency_flags['KZT']} Tenghe kazah",
+    f"/mkd {currency_flags['MKD']} Dinar macedonian",
+    f"/myr  {currency_flags['MYR']} Ringgit malayezian",
+    f"/rsd  {currency_flags['RSD']} Dinar sârb",
+    f"/thb  {currency_flags['THB']} Bath tailandez",
+    f"/tjs   {currency_flags['TJS']} Somoni tadjic",
+    f"/tmt {currency_flags['TMT']} Manat turkmen",
+    f"/uzs {currency_flags['UZS']} Sum uzbec",
+    f"/xdr  {currency_flags['XDR']} Special drawing rights"
 ]
+
 
 banks = [
     "/bnm Banca Națională a Moldovei",

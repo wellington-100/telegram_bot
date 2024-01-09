@@ -1,6 +1,6 @@
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
-from telegram import Update, ForceReply
+from telegram import Update, ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update, ReplyKeyboardMarkup, KeyboardButton
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import re
 import aioredis
@@ -9,11 +9,12 @@ from datetime import datetime, time
 import json
 from currency_info import currency_flags, currency_codes
 from urls import urls
+from typing import Tuple
 
 
 
 
-async def get_rates(currency: str) -> str:
+async def get_rates(currency: str, show_all=False) -> Tuple[str, int]:
     url = f"https://www.curs.md/ro/valuta/{currency}"
     
     async with ClientSession() as session:
@@ -36,7 +37,7 @@ async def get_rates(currency: str) -> str:
     results = []
     exclusions = ["SRL", "CSV", "Tighina", "Filiala", "Banca Nationala", "Sucursala", "Bancă", "Invest", "\""]
     replacements = {
-        "BNM": "BNM / Referință",
+        "BNM": "BNM / Curs oficial",
         # "Filiala 2": "2",
         # "Filiala 3": "3",
         # "Filiala 4": "4",
@@ -89,27 +90,58 @@ async def get_rates(currency: str) -> str:
     data.sort(key=lambda x: x[1], reverse=True)
 
 # Формирование строки результатов после сортировки
+    original_data_count = len(data)
+
+    # Сокращаем список данных до первых 15 записей, если show_all = False
+    if not show_all:
+        data = data[:15]
+
+    # Формирование строки результатов после сортировки
+    results = []
     for item in data:
         results.append(f"<pre><b>{item[0]:20}</b> {item[1]:.2f}  {item[2]:.2f}</pre>")
 
     if not results:
-        return f"Нет данных по валюте {currency}."
-
+        return f"Нет данных по валюте {currency}.", original_data_count
    
     selected_currency_flag = currency_flags.get(currency, "")
+    results_str = '\n'.join(results)
     header = f"<b>RATE DE SCHIMB VALUTAR / {formatted_date or 'Lipsă dată'}\n{selected_currency_flag} {currency} / MDL {currency_flags['MDL']}</b>\n\n"
-    return header + '\n'.join(results)
+    return header + results_str, original_data_count
+
 
 async def custom_rates(update: Update, context: CallbackContext) -> None:
     currency = update.message.text[1:].upper()
     if currency not in currency_codes:
         await update.message.reply_text("Неподдерживаемая валюта", parse_mode="HTML")
         return
-    rates_message = await get_rates(currency)
-    await update.message.reply_text(rates_message, parse_mode="HTML")
+    rates_message, data_count = await get_rates(currency)
+    
+    # Проверяем, нужно ли добавить кнопку "Показать больше"
+    if data_count > 15:
+        buttons = [[InlineKeyboardButton("... vizualizați mai multe", callback_data=f"all_rates_{currency}")]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+    else:
+        reply_markup = None
+
+    await update.message.reply_text(rates_message, reply_markup=reply_markup, parse_mode="HTML")
 
 
-async def get_bnm_rate() -> str:
+async def handle_all_rates(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    # Получаем валюту из callback_data
+    currency = query.data.split('_')[-1]
+    rates_message, _ = await get_rates(currency, show_all=True)
+
+    await query.message.edit_text(rates_message, parse_mode="HTML")
+
+
+
+
+
+async def get_bnm_rate(show_all=False) -> Tuple[str, int]:
     url = "https://www.curs.md/ro/curs_valutar/oficial"
     async with ClientSession() as session:
         async with session.get(url) as response:
@@ -131,7 +163,7 @@ async def get_bnm_rate() -> str:
             if not table:
                 return "Ошибка: таблица курсов не найдена"
 
-            rates = {}
+            data = []
             for row in table.find_all('tr')[1:]:  # Пропускаем заголовок таблицы
                 cells = row.find_all('td')
                 if len(cells) >= 3:
@@ -154,19 +186,38 @@ async def get_bnm_rate() -> str:
                     # Получаем флаг для валюты
                     flag = currency_flags.get(currency, "")
                     # Формируем строку с информацией о валюте, включая флаг
-                    rates[currency] = {"flag": flag, "rate": rate, "change": change_full}
+                    data.append((flag, currency, rate, change_full))
+            original_data_count = len(data)
 
     # Формирование итогового сообщения
-    if rates:
-        message_lines = [f" <b>CURS OFICIAL BNM {currency_flags['MDL']} pentru {formatted_date}</b>\n"]
+    if not show_all:
+        data = data[:5]
 
-        for key, data in rates.items():
-            message_lines.append(f"{data['flag']}<code> {key:<7} {data['rate']:10} {data['change']:>10}</code>")
-        return "\n".join(message_lines)
-    else:
-        return "Данные о курсах валют не найдены"
+    # Формирование итогового сообщения
+    message_lines = [f" <b>CURS OFICIAL BNM {currency_flags['MDL']} pentru {formatted_date}</b>\n"]
+    for item in data:
+        message_lines.append(f"{item[0]}<code> {item[1]:<7} {item[2]:10} {item[3]:>10}</code>")
+
+    return "\n".join(message_lines), original_data_count
 
 
 async def bnm_rate(update: Update, context: CallbackContext) -> None:
-    rate_message = await get_bnm_rate()
-    await update.message.reply_text(rate_message, parse_mode="HTML")
+    rate_message, data_count = await get_bnm_rate()
+
+    if data_count > 5:
+        buttons = [[InlineKeyboardButton("... vizualizați mai multe", callback_data="all_bnm_rates")]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+    else:
+        reply_markup = None
+
+    await update.message.reply_text(rate_message, reply_markup=reply_markup, parse_mode="HTML")
+
+
+async def handle_all_bnm_rates(update: Update, context: CallbackContext) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    rates_message, _  = await get_bnm_rate(show_all=True)
+    await query.message.edit_text(rates_message, parse_mode="HTML")
+
+
